@@ -8,27 +8,6 @@ Overview
 
 When we drive, we use our eyes to decide where to go.  The lines on the road that show us where the lanes are act as our constant reference for where to steer the vehicle.  Naturally, one of the first things we would like to do in developing a self-driving car is to automatically detect lane lines using an algorithm.
 
-In this project you will detect lane lines in images using Python and OpenCV.  OpenCV means "Open-Source Computer Vision", which is a package that has many useful tools for analyzing images.  
-
-To complete the project, two files will be submitted: a file containing project code and a file containing a brief write up explaining your solution. We have included template files to be used both for the [code](https://github.com/udacity/CarND-LaneLines-P1/blob/master/P1.ipynb) and the [writeup](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md).The code file is called P1.ipynb and the writeup template is writeup_template.md 
-
-To meet specifications in the project, take a look at the requirements in the [project rubric](https://review.udacity.com/#!/rubrics/322/view)
-
-
-Creating a Great Writeup
----
-For this project, a great writeup should provide a detailed response to the "Reflection" section of the [project rubric](https://review.udacity.com/#!/rubrics/322/view). There are three parts to the reflection:
-1. Describe the pipeline
-2. Identify any shortcomings
-3. Suggest possible improvements
-
-We encourage using images in your writeup to demonstrate how your pipeline works.  
-
-All that said, please be concise!  We're not looking for you to write a book here: just a brief description.
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup. Here is a link to a [writeup template file](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md). 
-
-
 The Project
 ---
 
@@ -99,4 +78,79 @@ Jupyter is an ipython notebook where you can run blocks of code and see results 
 A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
 
 **Step 5:** Complete the project and submit both the Ipython notebook and the project writeup
+
+Description
+---
+
+**Finding Lane Lines on the Road**
+
+
+[//]: # (Image References)
+
+[image1]: ./examples/grayscale.jpg "Grayscale"
+
+[1_raw]: ./writeup/1_raw.png "Raw"
+[2_regionmask]: ./writeup/2_regionmask.png "Region Mask"
+[3_colormask]: ./writeup/3_colormask.png "Color Mask"
+[4_edges]: ./writeup/4_edges.png "Edges"
+[5_lines_hough]: ./writeup/5_lines_hough.png "Lines Hough"
+[5_lines_extrapolated]: ./writeup/5_lines_extrapolated.png "Lines Extrapolated"
+---
+
+### Reflection
+
+
+
+###1. Describe your pipeline. As part of the description, explain how you modified the draw_lines() function.
+
+My pipeline consisted of 4 steps: applying a region mask, applying a color mask, detecting edges, and then detecting lines.
+
+![alt text][1_raw]
+
+1) A region mask insures that we do not include erroneous measurements that bias our line estimates. By doing this step early, we can potentially avoid spending compute power on regions that will not be considered. Keep in mind that we are assuming that all essential road markings can be found within a triangular polygon:
+
+![alt text][2_regionmask]
+
+2) A color mask assumes that road lines are either white or yellow. Of course, thresholds were chosen from examples with fairly consistent and bright lighting conditions.
+
+![alt text][3_colormask]
+
+3) Edge detection assumes that road marking have high constrast with their surroundings. This allows us to use the Canny edge detector (which uses gradients along both x and y directions). Notice that the detector identifies PIXELS with high contrast (as opposed to line segments, which is what we actually want).
+
+![alt text][4_edges]
+
+4) Line detection looks for groups of pixels that agree on the line. Of course, an inherent assumption is that road markings can be modeled as a line.
+
+The result of the hough transform groups neighborhoods of previously identified edges. Unfortunately, these do not fully capture the boundaries in which the car should remain.
+
+![alt text][5_lines_hough]
+
+To identify the lane boundaries, we extrapolate the hough lines by separating the identifies line segments into two sets: left and right lane. These are identified by grouping lines with similar slopes (within some threshold -- to eliminate erroneous cars that also happen to be white). For each group of lines, we fit points of the line segments to a line along the boundaries of the image (from bottom to middle of the image).
+
+![alt text][5_lines_extrapolated]
+
+
+
+###2. Identify potential shortcomings with your current pipeline
+
+There are a lot of assumptions mentioned above
+
+1) Reliance on road markings within a particular region
+
+2) Assuming certain types of lighting conditions due to fixed RGB thresholds for color masking
+
+3) Lanes must have high contrast with the road so dirt roads would be a problem
+
+4) Lanes are lines without curves
+
+
+###3. Suggest possible improvements to your pipeline
+
+1) Adaptive region boundaries
+
+2) Adaptive lighting thresholds
+
+3) Utilize scene understanding
+
+4) Fit lanes to a polynomial instead of a linear function
 
